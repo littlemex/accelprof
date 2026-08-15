@@ -3,33 +3,49 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "xprof"
+# NOTE: the PyPI distribution is "xprof-store" because "xprof" is already taken (TensorBoard's
+# profiler). The GitHub repo and the console script keep the "xprof" name. Change this if you
+# register a different name.
+name = "xprof-store"
 version = "0.1.0"
 description = "Cross-accelerator (NVIDIA GPU / AWS Neuron) experiment store + profiling-analysis MCP."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
 authors = [{ name = "littlemex" }]
-# Base install = the experiment_store library only (what a producer that just logs runs needs).
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3",
+  "Intended Audience :: Developers",
+  "Topic :: System :: Benchmark",
+]
+# Base install = the experiment_store library only. Ranges (not exact pins): a library must not
+# dictate a single version to its consumers.
 dependencies = [
-  "mlflow-skinny==3.1.4",
-  "sagemaker-mlflow==0.5.0",
-  "boto3==1.35.74",
+  "mlflow-skinny>=3.1,<4",
+  "boto3>=1.34",
 ]
 
-# The analysis MCP server is opt-in: `pip install xprof[mcp]` adds the MCP runtime on top of the
-# library, so a producer that only logs runs is not forced to pull it in.
 [project.optional-dependencies]
-mcp = ["mcp==1.18.0"]
+# The analysis MCP server (opt-in, so a producer that only logs runs does not pull in the MCP stack).
+mcp = ["mcp>=1.18,<2"]
+# SigV4 auth for a SageMaker-managed MLflow. Not needed for a plain MLflow server.
+sagemaker = ["sagemaker-mlflow>=0.5,<1"]
 test = ["pytest", "moto"]
 
 [project.scripts]
-# Requires the [mcp] extra.
+# Requires the [mcp] extra (the entry point errors with an install hint otherwise).
 xprof-analysis-mcp = "analysis_mcp.server:main"
 
 [project.urls]
 Homepage = "https://github.com/littlemex/xprof"
+Repository = "https://github.com/littlemex/xprof"
+Issues = "https://github.com/littlemex/xprof/issues"
 
-[tool.setuptools]
-# The library and the MCP server. examples/ are copy-and-adapt templates, not shipped in the wheel.
-packages = ["experiment_store", "analysis_mcp"]
+[tool.setuptools.packages.find]
+# include sub-packages automatically (so e.g. experiment_store.* is never silently dropped);
+# exclude tests from the wheel.
+include = ["experiment_store*", "analysis_mcp*"]
+
+[tool.setuptools.package-data]
+"*" = []

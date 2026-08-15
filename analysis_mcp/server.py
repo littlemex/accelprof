@@ -35,7 +35,11 @@ def build_service() -> tuple[AnalysisService, int]:
 
 
 def build_server(service: AnalysisService, port: int = 8080) -> Any:
-    from mcp.server.fastmcp import FastMCP
+    try:
+        from mcp.server.fastmcp import FastMCP
+    except ModuleNotFoundError as e:  # base install has no MCP runtime
+        raise SystemExit("the analysis MCP requires the 'mcp' extra — install it with "
+                         "`pip install \"xprof-store[mcp]\"`") from e
 
     mcp = FastMCP(SERVER_NAME, host=DEFAULT_HOST, port=port)
 
