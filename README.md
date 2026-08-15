@@ -1,6 +1,6 @@
-# xprof — cross-accelerator experiment store + profiling-analysis MCP
+# accelprof — cross-accelerator experiment store + profiling-analysis MCP
 
-[![ci](https://github.com/littlemex/xprof/actions/workflows/ci.yml/badge.svg)](https://github.com/littlemex/xprof/actions/workflows/ci.yml)
+[![ci](https://github.com/littlemex/accelprof/actions/workflows/ci.yml/badge.svg)](https://github.com/littlemex/accelprof/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![license](https://img.shields.io/badge/license-Apache--2.0-green)
 
@@ -8,12 +8,12 @@ Record every GPU and Neuron run under one identity and layout, then turn a run's
 into implementation advice over MCP — the multi-gigabyte artifacts are read in place and never
 copied to the client.
 
-xprof is self-contained software: a Python library plus an MCP server. It depends on nothing but
+accelprof is self-contained software: a Python library plus an MCP server. It depends on nothing but
 Python and the services *you already use* — an object store, an MLflow tracking server, and a
 directory where a run's artifacts are readable. It assumes no particular orchestrator; running it on
 Kubernetes is one deployment option, not a requirement.
 
-xprof fixes only what must be stable for producers and consumers to interoperate — an experiment's
+accelprof fixes only what must be stable for producers and consumers to interoperate — an experiment's
 identity and its S3 + MLflow layout — and leaves the rest open: which metrics you record, which
 profiling tools you run, and which reports you build are yours to decide.
 
@@ -22,19 +22,19 @@ profiling tools you run, and which reports you build are yours to decide.
 A run is addressed by a small set of reserved tags — alias, chip, region, workload id, artifacts
 URI, schema version — and stored under a deterministic prefix, `s3://<bucket>/<alias>/<run_id>/`,
 with MLflow as the searchable index. Everything else (metrics, parameters, free-form tags, and the
-set of artifact files) is recorded verbatim; xprof never enumerates or normalizes it. This is what
+set of artifact files) is recorded verbatim; accelprof never enumerates or normalizes it. This is what
 lets a GPU run and a Neuron run — measured by different tools that report different keys — be
 searched and compared side by side without deciding in advance what "comparable" means.
 
 ## Two pieces
 
-The PyPI distribution is **`xprof-store`** (the name `xprof` is taken); the import packages and the
-console script keep the `xprof` name.
+The PyPI distribution is **`accelprof`**; it installs the `experiment_store` library, and the `[mcp]`
+extra adds the `accelprof-analysis-mcp` console script.
 
 | Piece | Import / command | Role |
 |---|---|---|
-| `experiment_store` | `pip install xprof-store` | The fixed-IDs / open-content library a producer imports to log a run and a consumer imports to resolve one. Depends only on boto3 + MLflow (add the `[sagemaker]` extra for a SageMaker-managed MLflow). |
-| analysis MCP | `pip install "xprof-store[mcp]"` → `xprof-analysis-mcp` | An MCP server that maps a run to its artifact files in a local directory and runs an analyzer over them, returning advice — a text finding, never the bytes. |
+| `experiment_store` | `pip install accelprof` | The fixed-IDs / open-content library a producer imports to log a run and a consumer imports to resolve one. Depends only on boto3 + MLflow (add the `[sagemaker]` extra for a SageMaker-managed MLflow). |
+| analysis MCP | `pip install "accelprof[mcp]"` → `accelprof-analysis-mcp` | An MCP server that maps a run to its artifact files in a local directory and runs an analyzer over them, returning advice — a text finding, never the bytes. |
 
 `examples/` holds copy-and-adapt producer templates (an nsys producer, a CPU-only Neuron compile
 recipe, a benchmark-iteration template); they are not shipped in the wheel.
@@ -42,7 +42,7 @@ recipe, a benchmark-iteration template); they are not shipped in the wheel.
 ## Record a run (producer)
 
 ```bash
-pip install xprof-store     # library only — no MCP server pulled in
+pip install accelprof     # library only — no MCP server pulled in
 ```
 ```python
 from experiment_store import ExperimentStore
@@ -54,9 +54,9 @@ store.log("llama3-8b-parity", chip="gpu", region=REGION, workload_id="prefill-bs
 ## Analyze a run (the MCP)
 
 ```bash
-pip install "xprof-store[mcp]"
+pip install "accelprof[mcp]"
 MCP_MLFLOW_TRACKING_URI=<uri> MCP_AWS_REGION=<region> MCP_TRACE_BUCKET=<bucket> \
-  MCP_MOUNT_BASE=/path/to/artifacts xprof-analysis-mcp     # serves streamable-http on MCP_PORT (8080)
+  MCP_MOUNT_BASE=/path/to/artifacts accelprof-analysis-mcp     # serves streamable-http on MCP_PORT (8080)
 ```
 
 | Env var | Meaning |
@@ -71,10 +71,10 @@ MCP_MLFLOW_TRACKING_URI=<uri> MCP_AWS_REGION=<region> MCP_TRACE_BUCKET=<bucket> 
 Register it in any MCP client — for example Claude Code:
 
 ```bash
-claude mcp add --transport http xprof http://127.0.0.1:8080/mcp
+claude mcp add --transport http accelprof http://127.0.0.1:8080/mcp
 ```
 
-Find the run's id with the MLflow MCP (xprof does not duplicate run search), then `stage_run(<id>)`
+Find the run's id with the MLflow MCP (accelprof does not duplicate run search), then `stage_run(<id>)`
 → `analyze(<id>, "nsys-stats")`. The
 MCP reads artifacts from `MCP_MOUNT_BASE` — a plain directory where `<alias>/<run_id>/` files are
 readable. **How that directory is populated is your choice**: an AWS S3 Files read-only mount, an
@@ -94,7 +94,7 @@ the flow before wiring real services.
 
 ## Related projects
 
-- **[xprof-knowledge](https://github.com/littlemex/xprof-knowledge)** — the tuning-knowledge MCP;
+- **[accelprof-knowledge](https://github.com/littlemex/accelprof-knowledge)** — the tuning-knowledge MCP;
   pair it with this one to turn an analysis into a next step. Run each on its own `MCP_PORT` (they
   both default to 8080) when hosting both.
 - The official **MLflow MCP** (`pip install "mlflow[mcp]"`, `mlflow mcp run`) — run discovery and

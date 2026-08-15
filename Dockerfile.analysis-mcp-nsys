@@ -1,4 +1,4 @@
-# The xprof analysis MCP WITH the NVIDIA Nsight Systems CLI (nsys) layered in, so a deployment can
+# The accelprof analysis MCP WITH the NVIDIA Nsight Systems CLI (nsys) layered in, so a deployment can
 # register an `nsys stats` CommandAnalyzer (MCP_ANALYZERS) that reads a .nsys-rep and returns advice.
 # nsys stats is CPU-runnable (no GPU needed to analyze a captured report). A sample tool-layered
 # image; kept separate from the base so the base stays small and tool-agnostic.
@@ -17,4 +17,4 @@ RUN useradd -u 1000 -m mcp && chown -R mcp /app
 USER mcp
 ENV MCP_PORT=8080
 EXPOSE 8080
-CMD ["xprof-analysis-mcp"]
+CMD ["accelprof-analysis-mcp"]

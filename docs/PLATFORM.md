@@ -1,7 +1,7 @@
 # Architecture
 
 The overview lives in the top-level [README](../README.md); this document is the deeper software
-reference. It is deliberately infrastructure-agnostic: xprof depends only on an object store, an
+reference. It is deliberately infrastructure-agnostic: accelprof depends only on an object store, an
 MLflow tracking server, and a directory where a run's artifacts are readable. Where those come from
 — and how the software is deployed and operated (containers, an orchestrator, mount provisioning, a
 garbage-collection schedule) — is a deployment concern, one option for which is the `distributed-ai`
@@ -26,8 +26,8 @@ producer (any tool)                          consumer (any MCP client)
 | **analysis MCP** | [`analysis_mcp/`](../analysis_mcp/) | A FastMCP server (an ordinary CPU process) that resolves a run to its artifact paths under `MCP_MOUNT_BASE` and runs pluggable analyzers in place, returning advice. Analyzers come in two types — `command` for nsys/ncu and CLI tools, `server` for tools that serve results. |
 | **examples** | [`examples/`](../examples/) | Reference producers, not the contract: `gpu_nsys/`, a CPU-only Neuron compile recipe, and `benchmark_iteration/`. |
 
-Run discovery and search are the MLflow MCP's job, and the tuning know-how is the xprof-knowledge
-MCP's; xprof neither duplicates the former nor embeds the latter.
+Run discovery and search are the MLflow MCP's job, and the tuning know-how is the accelprof-knowledge
+MCP's; accelprof neither duplicates the former nor embeds the latter.
 
 ## Reading artifacts in place
 

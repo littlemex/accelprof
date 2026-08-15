@@ -3,10 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# NOTE: the PyPI distribution is "xprof-store" because "xprof" is already taken (TensorBoard's
-# profiler). The GitHub repo and the console script keep the "xprof" name. Change this if you
-# register a different name.
-name = "xprof-store"
+# The PyPI distribution, the GitHub repo, and the console script all share the "accelprof" name;
+# the import packages stay descriptive (experiment_store / analysis_mcp).
+name = "accelprof"
 version = "0.1.0"
 description = "Cross-accelerator (NVIDIA GPU / AWS Neuron) experiment store + profiling-analysis MCP."
 readme = "README.md"
@@ -35,12 +34,12 @@ test = ["pytest", "moto"]
 
 [project.scripts]
 # Requires the [mcp] extra (the entry point errors with an install hint otherwise).
-xprof-analysis-mcp = "analysis_mcp.server:main"
+accelprof-analysis-mcp = "analysis_mcp.server:main"
 
 [project.urls]
-Homepage = "https://github.com/littlemex/xprof"
-Repository = "https://github.com/littlemex/xprof"
-Issues = "https://github.com/littlemex/xprof/issues"
+Homepage = "https://github.com/littlemex/accelprof"
+Repository = "https://github.com/littlemex/accelprof"
+Issues = "https://github.com/littlemex/accelprof/issues"
 
 [tool.setuptools.packages.find]
 # include sub-packages automatically (so e.g. experiment_store.* is never silently dropped);

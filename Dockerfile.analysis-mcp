@@ -1,4 +1,4 @@
-# Reference image for the xprof analysis MCP — a sample for running it in a container. The package
+# Reference image for the accelprof analysis MCP — a sample for running it in a container. The package
 # is the source of truth; this image just pip-installs it (with the [mcp] extra) and runs the
 # console script. No orchestrator or cloud is assumed by the image itself.
 #
@@ -14,4 +14,4 @@ RUN useradd -u 1000 -m mcp && chown -R mcp /app
 USER mcp
 ENV MCP_PORT=8080
 EXPOSE 8080
-CMD ["xprof-analysis-mcp"]
+CMD ["accelprof-analysis-mcp"]
