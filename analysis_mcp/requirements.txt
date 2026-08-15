@@ -1,0 +1,5 @@
+# Runtime deps for the analysis-mcp image. The platform library's pins are the SINGLE source
+# (../experiment_store/requirements.txt); this file only adds the MCP server dependency on top, so
+# a dependency added to experiment_store can never be silently missing from this image.
+-r ../experiment_store/requirements.txt
+mcp==1.18.0

@@ -1,0 +1,33 @@
+# analysis-mcp WITH the NVIDIA Nsight Systems CLI (nsys) layered in — a tool-specific analyzer
+# image built FROM the platform base pattern, so the deployment can register an `nsys stats`
+# CommandAnalyzer (MCP_ANALYZERS) that reads a .nsys-rep off the S3 Files mount and returns advice.
+# nsys stats is CPU-runnable (no GPU needed to analyze a captured report). Kept separate from the
+# base image so the platform image stays small and tool-agnostic.
+FROM python:3.12-slim
+
+# --- Nsight Systems CLI from NVIDIA's devtools apt repo (validated on this base) ---------------
+RUN apt-get update && apt-get install -y --no-install-recommends wget gnupg ca-certificates \
+    && wget -qO /usr/share/keyrings/nvidia-devtools.asc \
+       https://developer.download.nvidia.com/devtools/repos/ubuntu2204/amd64/nvidia.pub \
+    && echo "deb [signed-by=/usr/share/keyrings/nvidia-devtools.asc] https://developer.download.nvidia.com/devtools/repos/ubuntu2204/amd64/ /" \
+       > /etc/apt/sources.list.d/nvidia-devtools.list \
+    && apt-get update && apt-get install -y --no-install-recommends nsight-systems-cli \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# analysis_mcp/requirements.txt pulls in ../experiment_store/requirements.txt, so both must be
+# present before install (same as Dockerfile.analysis-mcp).
+COPY experiment_store/requirements.txt experiment_store/requirements.txt
+COPY analysis_mcp/requirements.txt analysis_mcp/requirements.txt
+RUN pip install --no-cache-dir -r analysis_mcp/requirements.txt
+
+COPY experiment_store/ experiment_store/
+COPY analysis_mcp/__init__.py analysis_mcp/config.py analysis_mcp/analyzers.py \
+     analysis_mcp/service.py analysis_mcp/server.py analysis_mcp/
+RUN find experiment_store analysis_mcp -name 'test_*.py' -delete
+
+RUN useradd -u 1000 -m mcp
+USER 1000
+
+ENTRYPOINT ["python", "-m", "analysis_mcp.server"]

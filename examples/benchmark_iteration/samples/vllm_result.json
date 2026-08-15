@@ -1,0 +1,6 @@
+{"duration": 42.1, "completed": 200, "total_input_tokens": 40000, "total_output_tokens": 25600,
+ "request_throughput": 4.75, "request_goodput": 4.50, "output_throughput": 608.1, "total_token_throughput": 1558.2,
+ "mean_ttft_ms": 88.3, "median_ttft_ms": 72.5, "std_ttft_ms": 40.1, "p99_ttft_ms": 210.4,
+ "mean_tpot_ms": 15.2, "median_tpot_ms": 14.8, "p99_tpot_ms": 22.1,
+ "mean_itl_ms": 15.0, "median_itl_ms": 13.9, "p99_itl_ms": 55.2,
+ "mean_e2el_ms": 2100.5, "median_e2el_ms": 2050.0, "p99_e2el_ms": 3400.9}
