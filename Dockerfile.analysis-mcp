@@ -1,34 +1,17 @@
-# analysis-mcp — the Layer-2 Pod-side profiling-analysis MCP (infra/bench/analysis_mcp/).
-# Built in-cluster by the shared BuildKit builder (infra/eks/image-builder.tf), context root
-# infra/bench (so it can vendor the experiment_store library it imports):
-#   helm template exp ./charts/experiments -s templates/image-build-custom.yaml \
-#     --set imageBuild.enabled=true --set imageBuild.jobName=build-analysis-mcp \
-#     --set imageBuild.contextSubPath=infra/bench --set imageBuild.filename=Dockerfile.analysis-mcp \
-#     --set imageBuild.repository=$ANALYSIS_MCP_ECR_URL --set imageBuild.tag=v1 | kubectl apply -f -
+# Reference image for the xprof analysis MCP — a sample for running it in a container. The package
+# is the source of truth; this image just pip-installs it (with the [mcp] extra) and runs the
+# console script. No orchestrator or cloud is assumed by the image itself.
 #
-# This image bundles the platform library (experiment_store) + the analysis MCP. It ships only
-# the builtin 'inventory' analyzer; tool-specific analyzers (nsys, neuron-explorer) are layered
-# by building FROM this image and adding the tool (e.g. `apt-get install aws-neuronx-tools`),
-# then registering a CommandAnalyzer — kept out of the base so the platform image stays small and
-# tool-agnostic (fixed IDs, open content).
+# It ships only the builtin 'inventory' analyzer; layer tool-specific analyzers (nsys, neuron) on
+# top by building FROM this pattern and adding the tool (see Dockerfile.analysis-mcp-nsys), then
+# registering a CommandAnalyzer via MCP_ANALYZERS — kept out of the base so it stays small and
+# tool-agnostic.
 FROM python:3.12-slim
-
 WORKDIR /app
-
-# analysis_mcp/requirements.txt pulls in ../experiment_store/requirements.txt, so BOTH must be
-# present before install (the library's pins are the single source of the shared deps).
-COPY experiment_store/requirements.txt experiment_store/requirements.txt
-COPY analysis_mcp/requirements.txt analysis_mcp/requirements.txt
-RUN pip install --no-cache-dir -r analysis_mcp/requirements.txt
-
-# the platform library it imports + the MCP itself (no tests, no unrelated harness/adapters)
-COPY experiment_store/ experiment_store/
-COPY analysis_mcp/__init__.py analysis_mcp/config.py analysis_mcp/analyzers.py \
-     analysis_mcp/service.py analysis_mcp/server.py analysis_mcp/
-
-RUN find experiment_store analysis_mcp -name 'test_*.py' -delete
-
-RUN useradd -u 1000 -m mcp
-USER 1000
-
-ENTRYPOINT ["python", "-m", "analysis_mcp.server"]
+COPY . .
+RUN pip install --no-cache-dir .[mcp]
+RUN useradd -u 1000 -m mcp && chown -R mcp /app
+USER mcp
+ENV MCP_PORT=8080
+EXPOSE 8080
+CMD ["xprof-analysis-mcp"]

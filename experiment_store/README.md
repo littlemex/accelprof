@@ -40,8 +40,9 @@ store.hold(runs[0])    # exempt a run's artifacts from garbage collection
 store.purge(runs[0])   # delete a run's artifacts (a delete-capable role, never the reader role)
 ```
 
-- **Consumers read artifacts in place** off the bucket mounted with AWS S3 Files (`locate`), so
-  artifacts never land on a laptop and are not re-downloaded. `download` is a fallback only.
+- **Consumers read artifacts in place** via `locate`, which returns the path under `mount_base`
+  where the run's files are readable (the bucket exposed as a filesystem — an S3 Files or NFS mount,
+  or any synced directory), so artifacts are not re-downloaded. `download` is a fallback only.
 - **`search`** takes any MLflow filter over the open tags and metrics a producer logged
   (`"tags.run_no = '10'"`, `"metrics.tpot_ms < 20"`), with optional `alias` scoping and `order_by`.
 - **The S3 client must sign with SigV4:** the trace buckets are SSE-KMS, and reads against

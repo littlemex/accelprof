@@ -1,17 +1,17 @@
 # analysis_mcp — profiling-analysis MCP
 
-Analysis is decoupled from production. An accelerator (GPU/Neuron) workload only *produces*
-profiler artifacts and writes them to the trace bucket; reading and analyzing them needs no
-accelerator, so this MCP runs on a **CPU Pod** that mounts the bucket read-only via AWS S3 Files.
-Given an experiment alias it resolves the runs through `experiment_store`, reads each run's
-artifacts in place off the mount, runs a per-run analyzer, and returns advice — a text finding,
-never the artifact bytes. FastMCP serves streamable-http natively, so a laptop reaches it directly
-with `kubectl port-forward` (register `http://127.0.0.1:<port>/mcp`); no gateway is involved.
+Analysis is decoupled from production. An accelerator (GPU/Neuron) workload only *produces* profiler
+artifacts and stores them; reading and analyzing them needs no accelerator, so this MCP runs as an
+ordinary CPU process. Given a run id it resolves the run through `experiment_store`, reads the run's
+artifacts in place from `MCP_MOUNT_BASE` (a directory where `<alias>/<run_id>/` files are readable),
+runs a per-run analyzer, and returns advice — a text finding, never the artifact bytes. FastMCP
+serves streamable-http natively, so any MCP client connects directly at `http://<host>:<port>/mcp`;
+no gateway is involved.
 
-The chart pins the Pod to a CPU nodepool (`node-role: cpu`, no GPU request). Reads are in place, so
-no local disk is needed for the artifacts themselves; a tool that exports scratch (for example
-`nsys stats --sqlite`) writes to a `/tmp` emptyDir, so size the CPU node's ephemeral storage and the
-pod's resources for the largest trace you analyze.
+Reads are in place, so no local disk is needed for the artifacts themselves; a tool that exports
+scratch (for example `nsys stats --sqlite`) writes under `TMPDIR`, so give the process room for the
+largest trace you analyze. How `MCP_MOUNT_BASE` is populated (an S3 Files or NFS mount, a local
+sync) is a deployment choice, not something this server assumes.
 
 ## Tools
 
@@ -19,20 +19,19 @@ The surface is intentionally narrow — three tools that do only what nothing el
 and search are the MLflow MCP's job (see below); this MCP is not a second run browser.
 
 - `resolve_artifacts(run_id | alias+chip, pattern)` — the **id/alias → file-path** contract: map an
-  MLflow identity to the concrete Pod-local path(s) of matching profile files on the S3 Files mount
+  MLflow identity to the concrete local path(s) of matching profile files under `MCP_MOUNT_BASE`
   (glob, e.g. `*.nsys-rep`, `*.neff`). Returns metadata only (dir + absolute paths). Hand these to
-  an analyzer, or to an external tool/MCP that reads the **same** mount at the same `mountBase`.
-- `stage_run(run_id)` — ensure the run's artifacts are readable on the Pod (S3 Files mount, no
-  copy) and return their local dir + file inventory. Traverses the dir to trigger S3 Files
-  metadata import (first-access import can otherwise miss a freshly-synced object). Raises if the
-  dir is not present on the Pod (a down/misconfigured mount) rather than returning an empty
-  inventory.
+  an analyzer, or to an external tool/MCP that reads the **same** directory.
+- `stage_run(run_id)` — ensure the run's artifacts are readable (no copy) and return their local dir
+  + file inventory. Traverses the dir to trigger any lazy backing-store import (a first-access import
+  can otherwise miss a freshly-synced object). Raises if the dir is absent (a down/misconfigured
+  backing store) rather than returning an empty inventory.
 - `analyze(run_id, analyzer="inventory")` — run an analyzer over the staged dir and return advice.
 
 Find a run first with the official **MLflow MCP** (`pip install "mlflow[mcp]"`, `mlflow mcp run`),
 which browses and searches experiments/runs; hand its `run_id` to the tools above. That MCP cannot
-map a run to a mount path — which is exactly what `resolve_artifacts` adds. Run it behind
-`charts/remote-mcp`, alongside this one.
+map a run to a file path — which is exactly what `resolve_artifacts` adds. Run both MCPs side by side
+in your client.
 
 ## Analyzers (pluggable, tool-agnostic — one contract, two execution strategies)
 

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xprof"
+version = "0.1.0"
+description = "Cross-accelerator (NVIDIA GPU / AWS Neuron) experiment store + profiling-analysis MCP."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "littlemex" }]
+# Base install = the experiment_store library only (what a producer that just logs runs needs).
+dependencies = [
+  "mlflow-skinny==3.1.4",
+  "sagemaker-mlflow==0.5.0",
+  "boto3==1.35.74",
+]
+
+# The analysis MCP server is opt-in: `pip install xprof[mcp]` adds the MCP runtime on top of the
+# library, so a producer that only logs runs is not forced to pull it in.
+[project.optional-dependencies]
+mcp = ["mcp==1.18.0"]
+test = ["pytest", "moto"]
+
+[project.scripts]
+# Requires the [mcp] extra.
+xprof-analysis-mcp = "analysis_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/littlemex/xprof"
+
+[tool.setuptools]
+# The library and the MCP server. examples/ are copy-and-adapt templates, not shipped in the wheel.
+packages = ["experiment_store", "analysis_mcp"]

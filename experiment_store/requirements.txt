@@ -1,6 +1,0 @@
-# Runtime dependencies for experiment_store (imported by producers and by the analysis-MCP image).
-# Pinned to the versions used for real-machine verification against the live SageMaker MLflow App.
-mlflow-skinny==3.1.4
-sagemaker-mlflow==0.5.0
-boto3==1.35.74
-# Test-only (not needed at runtime): pytest, moto  — see docs.
