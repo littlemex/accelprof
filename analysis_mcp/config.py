@@ -1,4 +1,4 @@
-"""Runtime configuration for the analysis MCP (the Layer-2, Pod-side profiling-analysis server).
+"""Runtime configuration for the analysis MCP (the pod-side profiling-analysis server).
 
 Everything comes from the environment so the same image runs as a pod (Pod Identity, S3 Files
 mounted) or locally (developer IAM, a local dir standing in for the mount). Nothing is hardcoded

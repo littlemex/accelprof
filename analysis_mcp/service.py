@@ -70,7 +70,7 @@ class AnalysisService:
         """Map an MLflow identity (run_id, or alias+chip) to the concrete Pod-local path(s) of the
         matching profile file(s) on the S3 Files mount — the platform's id/alias -> file-path
         contract. Returns metadata only (paths + names, never bytes). ``pattern`` is a glob over the
-        run's files (e.g. ``*.nsys-rep``, ``*.neff``). Both this MCP tool (so the laptop can hand an
+        run's files (e.g. ``*.nsys-rep``, ``*.neff``). Both this MCP tool (so a client can hand an
         external analyzer an absolute path) and CommandAnalyzer's ``{file:}``/``{files:}`` tokens
         resolve paths through the same globbing, so the mapping lives in exactly one place."""
         run = self._select_run(run_id, alias, chip)

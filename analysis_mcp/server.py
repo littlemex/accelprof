@@ -1,13 +1,12 @@
-"""FastMCP (streamable-http) analysis MCP — the Layer-2 product the laptop connects to.
+"""FastMCP (streamable-http) analysis MCP — the server an MCP client connects to.
 
-Runs ON A POD in an accelerator's cluster. The laptop reaches it via ``kubectl port-forward``
-(no ALB/gateway) as a remote streamable-http MCP; it passes an experiment alias and gets back
-ADVICE. Artifacts are read in place off the S3 Files mount and analyzed on the Pod — zero bytes
-of profile data are sent to the laptop.
+Designed to run on a CPU pod near the artifacts: it reads a run's profile files in place off a
+read-only mount, analyzes them on the pod, and returns advice. Zero bytes of profile data are sent
+to the client. A client on a workstation reaches it as a remote streamable-http MCP (e.g. via
+``kubectl port-forward``, no gateway required).
 
-FastMCP serves streamable-http natively (verified in Phase 2), so the platform's own MCP needs
-no stdio->http proxy. supergateway is only for wrapping EXTERNAL stdio-only MCPs (e.g. an
-upstream nsight-ai / neuron-agentic server), which is a separate integration.
+FastMCP serves streamable-http natively, so this server needs no stdio->http proxy; a bridge such
+as supergateway is only for wrapping external stdio-only MCPs, which is a separate integration.
 
     MCP_MLFLOW_TRACKING_URI=arn:... MCP_AWS_REGION=<r> MCP_TRACE_BUCKET=<bucket> \\
     MCP_MOUNT_BASE=/traces  python -m analysis_mcp.server

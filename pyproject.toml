@@ -42,8 +42,8 @@ Repository = "https://github.com/littlemex/accelprof"
 Issues = "https://github.com/littlemex/accelprof/issues"
 
 [tool.setuptools.packages.find]
-# include sub-packages automatically (so e.g. experiment_store.* is never silently dropped);
-# exclude tests from the wheel.
+# include sub-packages automatically (so e.g. experiment_store.* is never silently dropped).
+# examples/ is intentionally omitted; the co-located test_*.py modules travel with their package.
 include = ["experiment_store*", "analysis_mcp*"]
 
 [tool.setuptools.package-data]

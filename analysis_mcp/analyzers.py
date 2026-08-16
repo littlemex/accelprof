@@ -40,7 +40,7 @@ def find_matches(run_dir: str, pattern: str) -> list[str]:
 def validate_argv_template(argv: tuple[str, ...] | list[str]) -> None:
     """Reject any token with a brace that is not a recognized placeholder, so a typo ("{flie:*}",
     "{file}" without a glob), a prefixed embed ("--sqlite={file:*}"), or an unbalanced brace fails
-    loudly at REGISTRATION rather than reaching the tool as a silent literal arg (R2).
+    loudly at REGISTRATION rather than reaching the tool as a silent literal arg.
     ``{file:GLOB}``/``{files:GLOB}`` are whole-token only; ``{dir}``/``{tmp}`` may be embedded."""
     for tok in argv:
         if _FILE_TOKEN.match(tok) or _FILES_TOKEN.match(tok):
