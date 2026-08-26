@@ -38,7 +38,11 @@ NAMESPACE_TAG = "namespace"
 # validated separately, not required from the caller of log().
 RESERVED_TAGS = (ALIAS_TAG, CHIP_TAG, REGION_TAG, WORKLOAD_TAG, ARTIFACTS_URI_TAG, SCHEMA_VERSION_TAG)
 
-CHIPS = ("gpu", "neuron")
+# cpu is here because a run that asked for no accelerator is still a run worth recording: the
+# platform's own smoke test is one, and refusing to record it would mean the first thing a new user
+# does cannot be recorded. The chip is the device the run asked for, which is also the key that
+# alias-based lookup searches on, so it has to be able to say "none".
+CHIPS = ("gpu", "neuron", "cpu")
 
 # alias / workload_id land in an S3 key prefix and an MLflow experiment name, so restrict them to
 # a filesystem/URI-safe charset (no spaces, slashes, quotes) — this prevents both a broken S3

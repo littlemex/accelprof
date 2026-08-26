@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # The PyPI distribution, the GitHub repo, and the console script all share the "accelprof" name;
 # the import packages stay descriptive (experiment_store / analysis_mcp).
 name = "accelprof"
-version = "0.1.1"
+version = "0.1.2"
 description = "Cross-accelerator (NVIDIA GPU / AWS Neuron) experiment store + profiling-analysis MCP."
 readme = "README.md"
 requires-python = ">=3.10"

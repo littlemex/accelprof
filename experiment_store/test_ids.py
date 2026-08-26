@@ -22,6 +22,13 @@ def test_validate_identity_rejects_bad_chip():
         ids.validate_identity(alias="a", chip="tpu", region="ap-northeast-1", workload_id="w")
 
 
+@pytest.mark.parametrize("chip", ["gpu", "neuron", "cpu"])
+def test_validate_identity_accepts_every_chip_including_cpu(chip):
+    """cpu is accepted because a run that asked for no accelerator is still a run: refusing it would
+    make the platform unable to record its own smoke test."""
+    ids.validate_identity(alias="a", chip=chip, region="us-east-2", workload_id="w")
+
+
 @pytest.mark.parametrize("bad", ["", "US-EAST-1", "region with space"])
 def test_validate_identity_rejects_bad_region(bad):
     with pytest.raises(ValueError):
