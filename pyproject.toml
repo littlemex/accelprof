@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # The PyPI distribution, the GitHub repo, and the console script all share the "accelprof" name;
 # the import packages stay descriptive (experiment_store / analysis_mcp).
 name = "accelprof"
-version = "0.1.0"
+version = "0.1.1"
 description = "Cross-accelerator (NVIDIA GPU / AWS Neuron) experiment store + profiling-analysis MCP."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -27,7 +27,9 @@ dependencies = [
 
 [project.optional-dependencies]
 # The analysis MCP server (opt-in, so a producer that only logs runs does not pull in the MCP stack).
-mcp = ["mcp>=1.18,<2"]
+# uvicorn is named here rather than relied on through mcp, because the server now configures it
+# directly (see serve() — the default keep-alive closes a connection between two tool calls).
+mcp = ["mcp>=1.18,<2", "uvicorn>=0.30"]
 # SigV4 auth for a SageMaker-managed MLflow. Not needed for a plain MLflow server.
 sagemaker = ["sagemaker-mlflow>=0.5,<1"]
 test = ["pytest", "moto"]

@@ -33,6 +33,26 @@ def build_service() -> tuple[AnalysisService, int]:
     return service, config.port
 
 
+def serve(mcp: Any, port: int) -> None:
+    """Run the server under uvicorn with a keep-alive that outlives a pause in the conversation.
+
+    FastMCP.run() leaves uvicorn's default keep-alive of five seconds in place. An MCP client holds
+    the connection open between tool calls, so any pause longer than that — a model thinking, a
+    person reading the last answer — has the server close a socket the client still believes in. The
+    next call goes out on it and fails with "the socket connection was closed unexpectedly", and the
+    retry succeeds, which is what makes the failure look random rather than timed.
+    """
+    import os
+
+    import uvicorn
+
+    # timeout_graceful_shutdown is named too: with a long keep-alive, an idle connection would
+    # otherwise hold a terminating Pod open for as long as the client keeps it.
+    uvicorn.run(mcp.streamable_http_app(), host=DEFAULT_HOST, port=port,
+                timeout_keep_alive=int(os.environ.get("MCP_KEEP_ALIVE_SECONDS", "300")),
+                timeout_graceful_shutdown=10)
+
+
 def build_server(service: AnalysisService, port: int = 8080) -> Any:
     try:
         from mcp.server.fastmcp import FastMCP
@@ -72,7 +92,7 @@ def build_server(service: AnalysisService, port: int = 8080) -> Any:
 
 def main() -> None:
     service, port = build_service()
-    build_server(service, port=port).run(transport="streamable-http")
+    serve(build_server(service, port=port), port)
 
 
 if __name__ == "__main__":
