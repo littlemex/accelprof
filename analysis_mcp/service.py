@@ -43,14 +43,34 @@ class AnalysisService:
 
     def _staged_dir(self, run) -> str:
         """The run's Pod-local artifact dir on the S3 Files mount (no copy). Raises if it is not a
-        directory: a down/misconfigured mount (or a PV bound to the wrong AZ) would otherwise make
-        globbing/os.walk yield nothing, indistinguishable from a legitimately artifact-less run."""
+        directory, because globbing/os.walk over a missing dir yields nothing, which would look the
+        same as a run that legitimately has no artifacts.
+
+        Two different problems land here and they have different owners, so the message has to say
+        which one it is: the mount being down or bound to the wrong AZ is the platform's, while a run
+        that recorded no artifacts is the producer's. The mount base answers that: if it is not a
+        directory, nothing under it can be, and if it is, then this run alone has nothing there."""
         local = self._store.locate(run)  # <mount_base>/<alias>/<run_id>/  (raises if mount unset)
-        if not os.path.isdir(local):
+        if os.path.isdir(local):
+            return local
+        base = getattr(self._store, "mount_base", None)
+        if not base or not os.path.isdir(base):
             raise FileNotFoundError(
-                f"staged dir {local!r} for run {run.run_id} is not a directory; the S3 Files mount "
-                f"is likely absent/misconfigured (or the PV is bound to a different AZ)")
-        return local
+                f"the trace mount at {base!r} is not a directory, so nothing can be staged. The "
+                f"S3 Files mount is absent or misconfigured (or the PV is bound to a different AZ)")
+        # A tag is read only if the producer set one: which tags exist is the producer's choice, so
+        # this reports what is there and never requires it.
+        mode = (getattr(run, "tags", None) or {}).get("profile_mode")
+        profiled = (getattr(run, "tags", None) or {}).get("profiled")
+        if mode == "none" or profiled == "false":
+            raise FileNotFoundError(
+                f"run {run.run_id} has no artifacts to stage: it was recorded without a profiler "
+                f"(profile_mode={mode!r}), so nothing was written to {local!r}. The mount at {base!r} "
+                f"is fine — a run like this is a metrics-only baseline, so read its metrics instead")
+        raise FileNotFoundError(
+            f"the mount at {base!r} is a directory but {local!r} is not, so this run has nothing "
+            f"staged under it. Either the run wrote no artifacts, or they were removed from the "
+            f"trace bucket after it finished")
 
     def stage(self, run_id: str) -> dict[str, Any]:
         """Return the Pod-local dir of the run's artifacts + a file inventory, without copying.
