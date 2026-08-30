@@ -296,3 +296,37 @@ def test_analyze_inventory_returns_advice_not_bytes(tmp_path):
     assert "model.neff\t8" in out["advice"]
     # advice must not contain the raw artifact bytes
     assert "NEFFDATA" not in out["advice"]
+
+
+def test_stage_missing_dir_blames_the_mount_only_when_the_mount_is_missing(tmp_path):
+    """A run recorded without a profiler has no dir, and saying "the mount is misconfigured" sends
+    the reader to the platform owner for a run that is behaving exactly as asked."""
+    svc = _service_with_run(tmp_path)
+    store = svc._store
+    baseline = FakeRun(run_id="run2", chip="cpu", region="r", workload_id="w",
+                       artifacts_uri="s3://mcp-traces-x/aliasA/run2/",
+                       tags={"profile_mode": "none", "profiled": "false"})
+    store.runs["run2"] = baseline
+    store.by_alias["aliasA"].append("run2")
+    with pytest.raises(FileNotFoundError) as e:
+        svc.stage("run2")
+    msg = str(e.value)
+    assert "recorded without a profiler" in msg
+    assert "misconfigured" not in msg
+
+    # A run that says it was profiled, with the mount present, is neither of the two above.
+    profiled = FakeRun(run_id="run3", chip="gpu", region="r", workload_id="w",
+                       artifacts_uri="s3://mcp-traces-x/aliasA/run3/",
+                       tags={"profile_mode": "nsys", "profiled": "true"})
+    store.runs["run3"] = profiled
+    with pytest.raises(FileNotFoundError) as e:
+        svc.stage("run3")
+    msg = str(e.value)
+    assert "nothing staged under it" in msg
+    assert "misconfigured" not in msg
+
+    # The mount itself gone is the case the old message described, and it keeps that wording.
+    store.mount_base = str(tmp_path / "not-mounted")
+    with pytest.raises(FileNotFoundError) as e:
+        svc.stage("run1")
+    assert "misconfigured" in str(e.value)
